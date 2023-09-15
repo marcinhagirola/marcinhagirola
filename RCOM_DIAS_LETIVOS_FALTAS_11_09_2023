@@ -1,0 +1,66 @@
+WITH freq_diaria as (SELECT  
+        m.cgmaluno,
+        extract(month from aula.dataaula) as mes_aula,
+        aula.dataaula,
+        COUNT (f.presenca) FILTER (WHERE f.presenca = 'F' AND jus.codjustificativa IS NULL) as qtd_faltas,
+        COUNT (aula.codaula) as qtd_aulas,
+        CASE WHEN COUNT (f.presenca) FILTER (WHERE f.presenca = 'F' AND jus.codjustificativa IS NULL) = COUNT (aula.codaula) THEN 1 ELSE 0 END AS faltou
+FROM tb_nucleoregional nre
+JOIN tb_municipio mun ON mun.codnucleoregional = nre.codnucleoregional
+JOIN tb_estabelecimento e ON e.codmunicipio = mun.codmunicipio
+JOIN tb_turma t ON t.codestabelecimento = e.codestabelecimento
+JOIN tb_seriacao s ON s.codseriacao = t.codseriacao
+JOIN tb_curso c ON c.codcurso = s.codcurso
+JOIN tb_cursoformaorganiz cf ON (cf.codcurso = s.codcurso AND cf.codformaorganizcurso = s.codformaorganizcurso)
+JOIN tb_matricula m ON m.codturma = t.codturma
+JOIN tb_aluno a ON a.cgmaluno = m.cgmaluno
+JOIN tb_matrizaluno matriz ON (matriz.cgmaluno = m.cgmaluno AND matriz.nummatricula = m.nummatricula)
+JOIN tb_disciplina disc ON (disc.coddisciplina = matriz.coddisciplina)
+JOIN tb_classe cl ON cl.codturma = t.codturma AND cl.coddisciplina = matriz.coddisciplina
+JOIN tb_aula aula ON aula.codclasse = cl.codclasse
+LEFT JOIN tb_avaliacaoclasse ac ON (ac.codclasse = cl.codclasse AND ac.codperiodoavaliacao = aula.codperiodoavaliacao)
+LEFT JOIN tb_avaliacaoaluno aa ON aa.codavaliacao = ac.codavaliacaoclasse AND aa.codmatrizaluno = matriz.codmatrizaluno
+LEFT JOIN tb_frequencia f ON (aula.codaula = f.codaula AND f.codmatrizaluno = matriz.codmatrizaluno)
+LEFT JOIN tb_justificativa jus ON (jus.cgmaluno = matriz.cgmaluno AND jus.nummatricula = matriz.nummatricula AND aula.dataaula BETWEEN jus.datainicio AND jus.datafim)
+WHERE t.codperiodoletivo = 231
+AND m.codsituacaomatricula in (1,7,9,12)
+AND e.codestab not in (41671, 99999)
+AND e.coddependencia = 3
+AND mun.codmunicipio = 690
+AND aula.dataaula is not null
+GROUP BY 1,2,3)
+SELECT  
+        nre.codnucleoregional,
+        nre.nomenreabrev,
+        mun.codmunicipio,
+        mun.nomemunicipio,
+        e.codestab,
+        e.codmec,
+        e.nomecompletoestab,
+        cf.codcursosae,
+        c.nomecurso,
+        s.descrseriacao,
+        t.indturma,
+        t.codturno,
+        fd.mes_aula,
+        m.cgmaluno,
+        a.nomealuno,
+        COUNT (DISTINCT(fd.dataaula)) as qtd_diasletivos,
+        sum(faltou) as qtd_faltas
+FROM tb_nucleoregional nre
+JOIN tb_municipio mun ON mun.codnucleoregional = nre.codnucleoregional
+JOIN tb_estabelecimento e ON e.codmunicipio = mun.codmunicipio
+JOIN tb_turma t ON t.codestabelecimento = e.codestabelecimento
+JOIN tb_seriacao s ON s.codseriacao = t.codseriacao
+JOIN tb_curso c ON c.codcurso = s.codcurso
+JOIN tb_cursoformaorganiz cf ON (cf.codcurso = s.codcurso AND cf.codformaorganizcurso = s.codformaorganizcurso)
+JOIN tb_matricula m ON m.codturma = t.codturma
+JOIN tb_aluno a ON a.cgmaluno = m.cgmaluno
+LEFT JOIN freq_diaria fd on fd.cgmaluno = m.cgmaluno
+WHERE t.codperiodoletivo = 231
+AND m.codsituacaomatricula in (1,7,9,12)
+AND e.codestab not in (41671,99999)
+AND e.coddependencia = 3
+AND cf.codcursosae IN (4025,4029,4035,4039,6402,2001,2002,2003,2004,2005,2006,2007,2008)
+AND cf.codcursosae IN (5099,5244) --EJA E PROJOVEM
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
