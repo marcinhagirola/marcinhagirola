@@ -1,0 +1,25 @@
+SELECT DISTINCT "tb_formaorganizcurso".codformaorganizcurso,
+       "tb_formaorganizcurso".descrformaorganizcurso,
+       "tb_cursoformaorganiz".codcurso,
+       "tb_cursoformaorganiz".nomecursosae30,
+       "tb_dependenciaadm".descrdependencia
+FROM (
+        (
+           (
+              (
+                 sa_escola.tb_cursoformaorganiz "tb_cursoformaorganiz"
+                 INNER JOIN sa_escola.tb_curso "tb_curso"
+                    ON ("tb_cursoformaorganiz".codcurso = "tb_curso".codcurso))
+              INNER JOIN
+              sa_escola.tb_formaorganizcurso "tb_formaorganizcurso"
+                 ON ("tb_formaorganizcurso".codformaorganizcurso =
+                     "tb_cursoformaorganiz".codformaorganizcurso))
+           INNER JOIN sa_escola.tb_cursoautorizado "tb_cursoautorizado"
+              ON ("tb_cursoautorizado".codcurso = "tb_curso".codcurso))
+        INNER JOIN sa_escola.tb_estabelecimento "tb_estabelecimento"
+           ON ("tb_cursoautorizado".codestabelecimento =
+               "tb_estabelecimento".codestabelecimento))
+     INNER JOIN sa_escola.tb_dependenciaadm "tb_dependenciaadm"
+        ON ("tb_estabelecimento".coddependencia =
+            "tb_dependenciaadm".coddependencia)
+WHERE "tb_formaorganizcurso".codformaorganizcurso IN (10,11,2)
